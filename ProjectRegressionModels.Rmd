@@ -1,0 +1,95 @@
+---
+title: "Vehicle Fuel Consumption"
+output:
+  pdf_document:
+    toc: true
+    highlight: zenburn
+---
+Vehicle Fuel Consumption
+========================================================
+## Executive Summary
+
+In this issue of the "Motor Trend", we will explore the features that affect fuel consumption in miles per gallon (MPG). The main questions to be addressed are:
+
+- “Is an automatic or manual transmission better for MPG”
+- “Quantifying how different is the MPG between automatic and manual transmissions?”
+
+It seems that fuel consumption is larger for manual transmission vehicles compared to automatic. 
+
+## Input Data
+The data to be used in this study are extracted from the 1974 Motor Trend US magazine, and comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973–74 models).
+
+The data frame consists of 32 observations on 11 variables.
+
+- **mpg**:	 Miles/(US) gallon
+- **cyl**:	 Number of cylinders
+- **disp**:	 Displacement (cu.in.)
+- **hp**:	 Gross horsepower
+- **drat**:	 Rear axle ratio
+- **wt**:	 Weight (lb/1000)
+- **qsec**:	 1/4 mile time
+- **vs**:	 V/S
+- **am**:	 Transmission (0 = automatic, 1 = manual)
+- **gear**:	 Number of forward gears
+- **carb**:	 Number of carburetors
+
+
+```{r}
+data(mtcars)
+head(mtcars)
+```
+
+## Feature Selection
+
+Initially we plot a matrix of scatter plots displaying how the variables affect each other.
+Then we calculate which of the variables are strongly correlated with each other.
+
+The most important features seem to be disp - Displacement (cu.in.) and cyl - Number of cylinders.
+
+The feature under discussion, am - Transmission (0 = automatic, 1 = manual) seems not between those strongly affecting others. We will combine it with the features with which am is least correlated:
+- carb
+- vs
+- qsec
+- hp
+
+
+```{r}
+require(graphics)
+pairs(mtcars, main = "mtcars data")
+
+M <- abs(cor(mtcars[,-1]))
+diag(M) <- 0
+which(M > 0.9,arr.ind=T)
+sort(M[8,-8])
+```
+
+## Regression Models
+am is a binary variable. 
+After several repetitions (starting with all candidate covariants) it seems that regression with covariates carb and vs produced the best results (regarding variance and p-values).
+
+```{r}
+lm1 <- lm(mpg ~ am, mtcars)
+lm2 <- lm(mpg ~ am+carb+vs, mtcars)
+```
+
+
+## Model Evalution
+Residual standard error, p-values and standard and press residuals (for am and covariants) are displayed below:
+```{r}
+summary(lm1)
+rstandard(lm1)
+resid(lm1) / (1 - hatvalues(lm1))
+
+summary(lm2)
+rstandard(lm2)
+resid(lm2) / (1 - hatvalues(lm2))
+```
+
+## Results
+The following figure displays how fuel consumption varies with transmission. Fitted lines on am (red) and am+carb+vs (blue) are added. 
+
+```{r fig.width=7, fig.height=6}
+plot(mtcars$mpg~mtcars$am,col=mtcars$hp,pch=19,main="Fuel Consumption (gmt) over Transmission (am)", xlab = "Transmission (0 = automatic, 1 = manual)", ylab = "Miles/(US) gallon")
+abline(lm1, lwd = 3, col="red")
+abline(lm2, lwd = 3, col="blue")
+```
